@@ -1,0 +1,32 @@
+name: "Azure DevOps Policy Enforcer"
+trigger: none  # Runs manually
+
+pool:
+    vmImage: 'windows-latest'
+
+parameters:
+  - name: repoName
+    type: string
+    default: ''
+  - name: projectName
+    type: string
+    default: ''
+
+variables:
+- group: BuildAdminTokens
+- template: variables.yml
+
+jobs:
+  - job: EnforceBranchPolicies
+    displayName: "Enforce Azure DevOps Repository Policies"
+    steps:
+      - checkout: self
+  
+      - task: PowerShell@2
+        displayName: "Enforce Azure DevOps Policies"
+        inputs:
+          targetType: 'filePath'
+          filePath: "$(System.DefaultWorkingDirectory)/scripts/EnforceAzureDevOpsPolicies.ps1"
+          arguments: "-organization $(organizationName) -projectName ${{ parameters.projectName }} -repoName ${{ parameters.repoName }} -groupDescriptor '$(groupDescriptor)' -policyName '$(policyName)' -minContributors $(minContributors)"
+        env:
+          PAT_TOKEN: $(PAT_TOKEN)
