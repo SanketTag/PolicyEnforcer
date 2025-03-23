@@ -1,4 +1,7 @@
-﻿class AzureDevOpsPolicyEnforcer {
+﻿# Class to enforce policies on Azure DevOps repositories.
+class AzureDevOpsPolicyEnforcer {
+    
+    # Declare instance variables for organization, project, repository, headers, etc.
     [string] $org
     [string] $projectName
     [hashtable] $headers
@@ -8,6 +11,7 @@
     [string] $projectId
     [string] $repositoryId
 
+    # Constructor to initialize the object with the organization, project name, and repository name
     AzureDevOpsPolicyEnforcer([string]$organization, [string]$projectName, [string]$repoName) {
         $this.org = $organization
         $this.projectName = $projectName
@@ -20,6 +24,7 @@
         $this.projectId = $this.GetProjectId()
     }
 
+    # Method to get the default branch of the repository
     [string] GetDefaultBranch() {
         Write-Host "GetDefaultBranch called with repoId: $($this.repositoryName)"
         $url = "$($this.orgUrl)/$($this.projectName)/_apis/git/repositories/$($this.repositoryName)?api-version=6.0"
@@ -30,6 +35,7 @@
         return $defaultBranch
     }
 
+    # Method to get the project ID based on project name
     [string] GetProjectId() {
         Write-Host "GetProjectID called for project: $($this.projectName)"
         $url = "$($this.orgUrl)/_apis/projects/$($this.projectName)?api-version=6.0"
@@ -40,6 +46,7 @@
         return $projId
     }
 
+    # Method to get the repository ID based on repository name
     [string] GetRepositoryId() {
         Write-Host "GetRepositoryId called for repository: $($this.repositoryName) in project: $($this.projectName)"
         $url = "$($this.orgUrl)/$($this.projectName)/_apis/git/repositories/$($this.repositoryName)?api-version=7.1"
@@ -50,6 +57,7 @@
         return $repoId
     }
 
+    # Method to fetch the security namespace ID related to Git repositories
     [string] GetSecurityNamespaceId() {
         $securityNamespaceId = $null
         $url = "$($this.orgUrl)/_apis/securitynamespaces?api-version=7.1"
@@ -75,6 +83,7 @@
         Return $securityNamespaceId
     }
 
+    # Method to check if a specific permission is set for a group within a security namespace
     [boolean] HasPermissionSetForGroup([string]$securityToken, [int]$permissionBitmask, [string]$securityNamespaceId, [string]$groupDescriptor) {
         $hasPermission = $false
 
@@ -105,7 +114,8 @@
         Return $hasPermission
     }
 
-    [Object] GetBranchPolicy ([string]$repoId, [string]$defaultBranch) {
+    # Method to get branch policy from a repository
+    [Object] GetBranchPolicy([string]$repoId, [string]$defaultBranch) {
         $policyUrl = "$($this.orgUrl)/$($this.projectName)/_apis/policy/configurations?repositoryId=$repoId&refName=$defaultBranch&api-version=7.10"
         $response = Invoke-RestMethod -Uri $policyUrl -Method Get -Headers $this.headers
         Write-Host "Fetched branch policy: $($response | ConvertTo-Json -Depth 10)"
@@ -121,7 +131,8 @@
         }
     }
 
-    [void] SetBranchPermissions ([string]$securityToken, [string]$groupDescriptor, [int]$permissionBitmask, [string]$securityNamespaceId) {   
+    # Method to set branch permissions for a given group in the repository
+    [void] SetBranchPermissions([string]$securityToken, [string]$groupDescriptor, [int]$permissionBitmask, [string]$securityNamespaceId) {
         $body = @{
             token                = $securityToken
             merge                = $true
@@ -130,7 +141,7 @@
                     descriptor   = $groupDescriptor
                     allow        = 0
                     deny         = $permissionBitmask
-                    extendedinfo = @{}
+                    extendedinfo = @{ }
                 }
             )
         } | ConvertTo-Json -Depth 10
@@ -145,7 +156,8 @@
         Write-Host "Denied permission successfully for given group. $($response | ConvertTo-Json -Depth 10)"
     }
 
-    [void] RemoveBranchPermissions ([string]$securityToken, [string]$groupDescriptor, [int]$permissionBitmask, [string]$securityNamespaceId) {   
+    # Method to remove branch permissions for a group
+    [void] RemoveBranchPermissions([string]$securityToken, [string]$groupDescriptor, [int]$permissionBitmask, [string]$securityNamespaceId) {
         $body = @{
             token                = $securityToken
             merge                = $true
@@ -174,7 +186,7 @@
         }
     }
 
-
+    # Method to enforce the branch policy
     [void] SetBranchPolicy([Hashtable]$policyBody) {
         $policyUrl = "$($this.orgUrl)/$($this.projectName)/_apis/policy/configurations?api-version=7.1"
         $policyBodyJson = $policyBody | ConvertTo-Json -Depth 10
@@ -183,6 +195,7 @@
         Write-Host "Successfully enforced branch policies."
     }
 
+    # Method to get the policy ID by its name
     [string] GetPolicyIdByName([string]$policyName) {
         $policyTypesUrl = "$($this.orgUrl)/$($this.projectName)/_apis/policy/types?api-version=7.1"
         $response = Invoke-RestMethod -Uri $policyTypesUrl -Method Get -Headers $this.headers
@@ -198,6 +211,7 @@
         }
     }
 
+    # Method to check if the caller has the required permission for a specific branch
     [bool] HasPermissionForBranch([string]$securityToken, [string]$securityNamespaceId, [int]$managePermissionsBit) {
         # Construct the permissions API URL with necessary query parameters
         $permissionsUrl = "$($this.orgUrl)/_apis/permissions/$($securityNamespaceId)/$($managePermissionsBit)?tokens=$($securityToken)&api-version=7.1"
@@ -224,4 +238,3 @@
         }
     }
 }
-

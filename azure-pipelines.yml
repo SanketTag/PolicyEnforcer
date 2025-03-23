@@ -1,27 +1,30 @@
-name: "Azure DevOps Policy Enforcer"
+# Azure DevOps Pipeline for enforcing repository policies in Azure DevOps
+
 trigger: none  # Runs manually
 
 pool:
     vmImage: 'windows-latest'
 
 parameters:
-  - name: repoName
+  - name: repoName # Name of the repository to enforce policies for
     type: string
     default: ''
-  - name: projectName
+  - name: projectName  # Name of the Azure DevOps project
     type: string
     default: ''
 
 variables:
-- group: BuildAdminTokens
+- group: BuildAdminTokens # Use the variable group 'BuildAdminTokens' for security tokens and other variables
 - template: variables.yml
 
 jobs:
   - job: EnforceBranchPolicies
     displayName: "Enforce Azure DevOps Repository Policies"
     steps:
+      # Step 1: Checkout the code from the repository
       - checkout: self
   
+       # Step 2: Run the PowerShell script to enforce policies
       - task: PowerShell@2
         displayName: "Enforce Azure DevOps Policies"
         inputs:

@@ -4,23 +4,36 @@
 
 .DESCRIPTION
     The script uses the AzureDevOpsPolicyEnforcer module to interact with Azure DevOps services.
-    It requires the organization name, repository ID, and project name as mandatory parameters.
-    The script will output the default branch of the specified repository and enforce specific policies and permissions.
+    It requires the organization name, repository ID, project name, group descriptor, policy name, and minimum contributor count as mandatory parameters.
+    The script will output the default branch of the specified repository, check if the specified branch policy is in place, 
+    and enforce specific policies and permissions for the repository's branches.
 
 .PARAMETER organization
     The name of the Azure DevOps organization.
 
-.PARAMETER repoId
-    The ID of the repository.
-
 .PARAMETER projectName
-    The name of the project.
+    The name of the project within the Azure DevOps organization.
+
+.PARAMETER repoName
+    The name of the repository within the project.
+
+.PARAMETER groupDescriptor
+    The group descriptor (in the format "Microsoft.TeamFoundation.Identity") for the group whose permissions are being modified.
+
+.PARAMETER policyName
+    The name of the branch policy to enforce on the repository.
+
+.PARAMETER minContributors
+    The minimum number of contributors required for the branch policy.
 
 .NOTES
     Author: Sanket Tagalpallewar
 
 .EXAMPLE
-    .\EnforceAzureDevOpsPolicies.ps1 -organization "myOrg" -repoId "myRepoId" -projectName "myProject"
+    .\EnforceAzureDevOpsPolicies.ps1 -organization "myOrg" -repoName "myRepoId" -projectName "myProject" `
+    -groupDescriptor "group1, group2" -policyName "Minimum Number of Reviewers" -minContributors 2
+    This example enforces the "Minimum Number of Reviewers" policy for the specified repository with 2 minimum contributors 
+    and ensures that permissions are correctly set for the groups specified in the group descriptor.
 #>
 
 using module "./modules/AzureDevOpsPolicyEnforcer.psm1"
@@ -56,6 +69,7 @@ $permissions = @{
     "BypassPoliciesWhenPushing"       = 128
 }
 
+# Function to enforce the branch policy
 Function EnforceBranchPolicy {
     param (
         [Parameter(Mandatory = $true)]
@@ -99,6 +113,7 @@ Function EnforceBranchPolicy {
     }
 }
 
+# Function to ensure that permissions are set for the branch
 function EnsureBranchPermissions {
     param (
         [Parameter(Mandatory = $true)]
@@ -154,8 +169,7 @@ try {
     }
 
     # Check and enforce policies
-        EnforceBranchPolicy -enforcer $enforcer -policyName $policyName -minContributors $minContributors 
-    
+    EnforceBranchPolicy -enforcer $enforcer -policyName $policyName -minContributors $minContributors    
 
 }
 catch {
