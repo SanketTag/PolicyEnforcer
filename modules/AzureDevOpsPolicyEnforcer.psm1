@@ -115,12 +115,12 @@ class AzureDevOpsPolicyEnforcer {
     }
 
     # Method to get branch policy from a repository
-    [Object] GetBranchPolicy([string]$repoId, [string]$defaultBranch) {
-        $policyUrl = "$($this.orgUrl)/$($this.projectName)/_apis/policy/configurations?repositoryId=$repoId&refName=$defaultBranch&api-version=7.10"
+    [Object] GetBranchPolicy([string]$policyId) {
+        $policyUrl = "$($this.orgUrl)/$($this.projectName)/_apis/policy/configurations?repositoryId=$($this.repositoryId)&refName=$($this.defaultBranchName)&api-version=7.10"
         $response = Invoke-RestMethod -Uri $policyUrl -Method Get -Headers $this.headers
         Write-Host "Fetched branch policy: $($response | ConvertTo-Json -Depth 10)"
         $policy = $response.value | Where-Object { 
-            $_.type.id -eq "fa4e907d-c16b-4a4c-9dfa-4906e5d171dd"  # Ensuring it's the "Minimum Number of Reviewers" policy
+            $_.type.id -eq $policyId  # Ensuring it's the "Minimum Number of Reviewers" policy
         }
         Write-Host "Policy: $($policy | ConvertTo-Json -Depth 10)"
         if ($policy -eq $null) {

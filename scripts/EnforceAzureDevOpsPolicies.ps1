@@ -84,7 +84,11 @@ Function EnforceBranchPolicy {
 
 
     $policyId = $enforcer.GetPolicyIdByName($policyName)
-    $policy = $enforcer.GetBranchPolicy($enforcer.repositoryId, $enforcer.defaultBranchName)
+    if ($policyId -eq $null) {
+        Write-Error "Policy with the given name '$policyName' not found."
+    }
+
+    $policy = $enforcer.GetBranchPolicy($policyId)
     Write-Host "Policy from script: $($policy)"
     if ($policy -eq $null -or $policy.settings.minimumApproverCount -ne $minContributors -or $policy.settings.resetOnSourcePush -ne $true) {
              
